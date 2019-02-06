@@ -292,7 +292,7 @@ dem.means <- subset(judge.means, republican == 0)
 ## Figure 1
 ########################################################
 
-#pdf(file= "lib_votes.pdf", width = 5, height = 5, family = "Helvetica", pointsize = 10)
+pdf(file= "lib_votes.pdf", width = 5, height = 5, family = "Helvetica", pointsize = 10)
 plot(density(judge.means$lib_vote_share), 
 	xlim = c(-.4,1.4), ylim = c(0,2.5),
 	ylab = "", xlab = "Proportion of Cases Decided in a Feminist Direction", 
@@ -310,7 +310,7 @@ text(x = .5, y = 2.4, "More Feminist", col = "grey50", pos = 4, cex = 0.9)
 text(x = .25, y = 1.7, "Republicans", pos = 2, cex = 0.9)
 text(x = .7, y = 1, "Democrats", pos = 4, cex = 0.9)
 text(x = .075, y = .6, "All", pos = 4, cex = 0.9)
-#dev.off()
+dev.off()
 
 #######################################################
 ## Table 3: Distribution of Cases
