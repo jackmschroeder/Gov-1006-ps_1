@@ -1,11 +1,16 @@
 ---
-title: "Table2"
+title: "Replication #1"
 author: "Jack Schroeder"
 date: "2/5/2019"
 output:
   pdf_document: default
   html_document: default
+header-includes:
+    - \usepackage{caption}
 ---
+
+\captionsetup[table]{labelformat=empty}
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -16,9 +21,15 @@ library(reshape)
 library(apsrtable)
 library(stargazer)
 library(rms)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(tidyverse)
 ```
 
 ```{r, echo=FALSE}
+# From the replication code, we think this makes sure calling for 
+# sim still works.
 sim <- Zelig:::sim
 
 # We do not know what this fuction does. The original name, "cl",
@@ -67,11 +78,15 @@ all <- subset(judge.means, girls != "NaN")
 aa1 <- table(all$republican, all$child)
 bb1 <- table(all$republican, all$girls)
 
-# Calling xtable replicates the table.
 
-xtable(aa1)
-xtable(bb1)
+# Calling kable replicates the table as best we can.
 
+kable(aa1, caption = "Table 1: Number of Children and Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002: Number of Children")
+kable(bb1, caption = "Table 1 (continued): Number of Children and Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002: Number of Girls")
+
+```
+
+```{r, echo=FALSE}
 # Table 2 looks at the judge demographics on gender-related cases.
 # Looks at race, gender, party, children, and year born, among other
 # things.
@@ -229,7 +244,12 @@ rownames(demographic_table) <- c("Mean No. Children", "Mean No. Girls",
 	"2 children", "3 children",
 	"4 children", "5 Children", "6 Children or More", "Proportion Female", "Proportion Republican",
 	"Proportion White", "Mean Year Born", "N")
-xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
+
+# xtable didn't work out for us when knitting into a PDF, so we
+# use knitr and kable.
+
+#xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
+kable(demographic_table, digits = 2, caption = "Table 2: Demographics of U.S. Courts of Appeals Judges Who Voted on Gender-Related Cases, 1996-2002")
 
 # This part of the data makes weights based on the number of cases
 # heard by each judge. They don't use this for a table but it's
@@ -247,6 +267,100 @@ judge.means <- cbind(judge.means, no_cases)
 
 # They want this sum function to equal 2,674. It does.
 
-sum(judge.means$no_cases)
+#sum(judge.means$no_cases)
+
+# They want to figure out a feminist direction in decisions. They do this by tallying "liberal"
+# votes. They make a fucntion to find out whether votes on gender decision were liberal.
+
+no_liberalvote <- matrix(data = NA, nrow = nrow(judge.means), ncol = 1)
+for(i in 1:length(no_liberalvote)){
+	stuff <- women.cases[which(women.cases$name == judge.means$name[i]),]
+	no_liberalvote[i] <- nrow(subset(stuff, vote == 2 | vote == 3))
+	}
+
+#Then they make a liberal vote share out of this (divide by number of cases).
+
+lib_vote_share <- no_liberalvote/no_cases
+
+# They add this data to the means for each judge (and take out NA values).
+
+judge.means <- cbind(judge.means, no_liberalvote, lib_vote_share)
+judge.means <- subset(judge.means, girls != "NaN")
+
+# They also want to use subsetted data later that looks at each population (by gender and party).
+
+# Women:
+
+women.means <- subset(judge.means, woman == 1)
+
+# Men:
+
+men.means <- subset(judge.means, woman == 0)
+
+# Republicans:
+
+rep.means <- subset(judge.means, republican == 1)
+
+# Democrats: 
+
+dem.means <- subset(judge.means, republican == 0)
+```
+
+
+```{r, echo=FALSE}
+# Here we create Figure 1.
+# Since their plot function doesn't work, we use ggplot to create
+# a similar density graph. This does not have the total since we 
+# could not find an easy way to add it to the plot.
+
+ggplot(judge.means, aes(lib_vote_share)) + geom_density() + xlim(-0.5,1.5) + xlab("Proportion of Cases Decided in a Feminist Direction") + ylab("") + scale_color_manual(values = c(`0`="blue", `1` = "red")) + theme(legend.position="none", axis.text.y = element_blank(), axis.ticks.y = element_blank()) + geom_density(aes(lib_vote_share, color=factor(republican), linetype = factor(republican))) + ggtitle("Figure 1: Distribution of the Proportion of Cases Decided in a Feminist Direction out of All Gender-Related Cases Decided, 1996-2002")
+
+# Then we make table 3, which looks at case distribution.
+
+gg <- rbind (summary(judge.means$no_cases), summary(dem.means$no_cases), summary(rep.means$no_cases))
+rownames(gg) <- c("All Judges", "Democrats", "Republicans")
+
+kable(gg, caption = "Table 3: Distribution of the number of gender-related cases heard per judge, 1996-2002")
+```
+
+
+```{r, echo=FALSE}
+# Table 9 looks at the proportion for girls of judges in gender related cases.
+
+# First we subset judge means to find the Republicans. We do the same for Democrats.
+
+rep.means <- subset(judge.means, republican == 1)
+dem.means <- subset(judge.means, republican == 0)
+
+# Then aa9 and bb9 are tables looking at the mean children/girls of each judge by
+# party. None of the Republican judges had 5 girls,
+# so we did not include that column in the final table.
+
+aa9 <- table(dem.means$child, dem.means$girl)
+bb9 <- table(rep.means$child, rep.means$girl)
+
+aa.9 <- prop.table(table(dem.means$child, dem.means$girl),1)
+bb.9 <- prop.table(table(rep.means$child, rep.means$girl),1)
+
+# The first row in aa.9 and bb.9 do not appear in the paper. The code below gets
+# rid of it.
+
+aa.9 <- aa.9[-c(1), ]
+
+bb.9 <- bb.9[-c(1), ]
+
+#We then assign column and row names to the kable we will make.
+
+colnames(aa.9) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
+
+colnames(bb.9) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls")
+
+# The paper uses a "-" to signify the areas of impossibility (a judge that has one
+# child cannot have two girls). We just defaulted to using 0 out of necessity.
+# We make a kable out of the data.
+
+kable(cbind(aa.9, bb.9), digits = 2, caption = "Table 9: Proportion of Girls (Conditional on Number of Children) for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
+  kable_styling("striped") %>% 
+  add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5))
 ```
 

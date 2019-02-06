@@ -2,7 +2,9 @@
 title: 'Replication #1'
 author: "Jack Schroeder"
 date: "2/5/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -69,10 +71,11 @@ all <- subset(judge.means, girls != "NaN")
 aa1 <- table(all$republican, all$child)
 bb1 <- table(all$republican, all$girls)
 
-# Calling xtable replicates the table.
 
-xtable(aa1)
-xtable(bb1)
+# Calling kable replicates the table as best we can.
+
+kable(aa1)
+kable(bb1)
 
 # Table 2 looks at the judge demographics on gender-related cases.
 # Looks at race, gender, party, children, and year born, among other
@@ -231,7 +234,12 @@ rownames(demographic_table) <- c("Mean No. Children", "Mean No. Girls",
 	"2 children", "3 children",
 	"4 children", "5 Children", "6 Children or More", "Proportion Female", "Proportion Republican",
 	"Proportion White", "Mean Year Born", "N")
-xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
+
+# xtable didn't work out for us when knitting into a PDF, so we
+# use knitr and kable.
+
+#xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
+kable(demographic_table, digits = 2, caption = "Table 2: Demographics of U.S. Courts of Appeals Judges Who Voted on Gender-Related Cases, 1996-2002")
 
 # This part of the data makes weights based on the number of cases
 # heard by each judge. They don't use this for a table but it's
@@ -292,41 +300,30 @@ dem.means <- subset(judge.means, republican == 0)
 ## Figure 1
 ########################################################
 
-pdf(file= "lib_votes.pdf", width = 5, height = 5, family = "Helvetica", pointsize = 10)
-plot(density(judge.means$lib_vote_share), 
-	xlim = c(-.4,1.4), ylim = c(0,2.5),
-	ylab = "", xlab = "Proportion of Cases Decided in a Feminist Direction", 
-	yaxt = "n", 
-	bty = "n", 
-	main = "",
-	col = "black", lwd = 2)
-lines(density(rep.means$lib_vote_share), 
-	col = "firebrick", lwd = 2, lty  = 2)
-lines(density(dem.means$lib_vote_share), 
-	col = "dodgerblue", lwd = 2, lty  = 3)
-abline(v = .5, col = "grey50", lty = 2)
-text(x = .5, y = 2.4, "Less Feminist", col = "grey50", pos = 2, cex = 0.9)
-text(x = .5, y = 2.4, "More Feminist", col = "grey50", pos = 4, cex = 0.9)
-text(x = .25, y = 1.7, "Republicans", pos = 2, cex = 0.9)
-text(x = .7, y = 1, "Democrats", pos = 4, cex = 0.9)
-text(x = .075, y = .6, "All", pos = 4, cex = 0.9)
-dev.off()
+# Since their plot function doesn't work, we use ggplot to create
+# a similar density graph. This does not have the total since we 
+# could not find an easy way to add it to the plot.
 
-#######################################################
-## Table 3: Distribution of Cases
-########################################################
+ggplot(judge.means, aes(lib_vote_share)) + geom_density() + xlim(-0.5,1.5) + xlab("Proportion of Cases Decided in a Feminist Direction") + ylab("") + scale_color_manual(values = c(`0`="blue", `1` = "red")) + theme(legend.position="none", axis.text.y = element_blank(), axis.ticks.y = element_blank()) + geom_density(aes(lib_vote_share, color=factor(republican), linetype = factor(republican), label = factor(republican)))
+
+# Then we make table 3, which looks at case distribution.
+
+# We have to bind the means of the numbers of cases by party.
 
 gg <- rbind (summary(judge.means$no_cases), summary(dem.means$no_cases), summary(rep.means$no_cases))
+
+# Then we assign row names.
+
 rownames(gg) <- c("All Judges", "Democrats", "Republicans")
-xtable(gg, caption = "Distribution of the number of gender-related cases heard per judge, 1996-2002.", label = "t:number_cases1")
 
-########################################################
-## Table 4: Core Results (WLS)
-########################################################
+# And then we use kable.
 
-################ Results for all judges
+kable(gg, caption = "Table 3: Distribution of the number of gender-related cases heard per judge, 1996-2002.")
 
-#judge.means <- subset(judge.means, child > 0)
+# Given our situation, we decided it would be best to try and replicate tables 7 and
+# 9, which we thought were the most important other tables. We were told not to 
+# attempt #6 anyway. The below code is still there in case it was needed to make
+# the final two tables.
 
 my.out1 <- lm(lib_vote_share ~ as.factor(girls) + as.factor(child), 
 	data = judge.means, weights = judge.means$no_cases)
