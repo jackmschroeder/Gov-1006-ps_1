@@ -1,0 +1,252 @@
+---
+title: "Table2"
+author: "Jack Schroeder"
+date: "2/5/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Zelig)
+library("ZeligChoice")
+library(xtable)		
+library(reshape)
+library(apsrtable)
+library(stargazer)
+library(rms)
+```
+
+```{r, echo=FALSE}
+sim <- Zelig:::sim
+
+# We do not know what this fuction does. The original name, "cl",
+# doesn't appear anywhere else.
+
+whoknows   <- function(dat,fm, cluster){
+           require(sandwich, quietly = TRUE)
+           require(lmtest, quietly = TRUE)
+           M <- length(unique(cluster))
+           N <- length(cluster)
+           K <- fm$rank
+           dfc <- (M/(M-1))*((N-1)/(N-K))
+           uj  <- apply(estfun(fm),2, function(x) tapply(x, cluster, sum));
+           vcovCL <- dfc*sandwich(fm, meat=crossprod(uj)/N)
+           coeftest(fm, vcovCL) }
+           
+           
+           
+# They load in three different data sets. The first is by gender.
+
+ women.cases <- read.csv("glynn_sen_daughters_by_case_1.csv", stringsAsFactors = FALSE) 
+
+# They subset the cases to receive only the male ones.
+ women.cases <- subset(women.cases, femplaintiff == 1)
+
+ # Now they look for areas relating women's rights.
+ women.cases <- subset(women.cases, area == "employment" | area == "Title IX" | area == "pregnancy" | area == "abortion" | area == "reproductive rights")
+
+ # And they re-assign those areas.
+ 
+ women.cases$area <- factor(women.cases$area, levels = c("abortion","employment","pregnancy","reproductive rights","Title IX"))
+
+# They then read in all of the cases to find trends among judges.
+
+judge.means <- read.csv("glynn_sen_daughters_by_judge.csv", stringsAsFactors = FALSE)
+
+# They want to make sure they're only looking at judges with 
+# daughters (or judges they know don't have children), so they
+# filter out NA values.
+
+all <- subset(judge.means, girls != "NaN")
+
+# Here is the first table. It looks at the amount of children each 
+# court of appeal judge had (among judges looking at gender-related)
+# cases. They subset it by party initially.
+aa1 <- table(all$republican, all$child)
+bb1 <- table(all$republican, all$girls)
+
+# Calling xtable replicates the table.
+
+xtable(aa1)
+xtable(bb1)
+
+# Table 2 looks at the judge demographics on gender-related cases.
+# Looks at race, gender, party, children, and year born, among other
+# things.
+
+# The first thing they do is subset by party and gender.
+
+dems <- subset(all, republican == 0)
+reps <- subset(all, republican == 1)
+women <- subset(all, woman == 1)
+men <- subset(all, woman == 0)
+
+# Then they calculate the mean number of children. Assigned to
+# mean.kids. This is done by all, party, then gender.
+
+mean.kids <-  cbind(mean(na.omit(all$child)), 
+		mean(na.omit(dems$child)),
+		mean(na.omit(reps$child)),
+		mean(na.omit(women$child)),
+		mean(na.omit(men$child))
+	)
+
+# The same for girls. mean.girls
+
+mean.girls <- cbind(mean(na.omit(all$girls)), 
+		mean(na.omit(dems$girls)),
+		mean(na.omit(reps$girls)),
+		mean(na.omit(women$girls)),
+		mean(na.omit(men$girls))
+	)
+
+# Then the proportion of judges with zero children.
+
+prop.zero <- cbind(prop.table(table(na.omit(all$child)))[1],
+prop.table(table(na.omit(dems$child)))[1],
+prop.table(table(na.omit(reps$child)))[1],
+prop.table(table(na.omit(women$child)))[1],
+prop.table(table(na.omit(men$child)))[1]
+	)
+	
+# Proportion with one child.
+	
+prop.one <- cbind(prop.table(table(na.omit(all$child)))[2],
+prop.table(table(na.omit(dems$child)))[2],
+prop.table(table(na.omit(reps$child)))[2],
+prop.table(table(na.omit(women$child)))[2],
+prop.table(table(na.omit(men$child)))[2]
+	)
+	
+# Proportion with two.
+
+prop.two <- cbind(prop.table(table(na.omit(all$child)))[3],
+prop.table(table(na.omit(dems$child)))[3],
+prop.table(table(na.omit(reps$child)))[3],
+prop.table(table(na.omit(women$child)))[3],
+prop.table(table(na.omit(men$child)))[3]
+	)
+
+# Proportion with three.
+
+prop.three <- cbind(prop.table(table(na.omit(all$child)))[4],
+prop.table(table(na.omit(dems$child)))[4],
+prop.table(table(na.omit(reps$child)))[4],
+prop.table(table(na.omit(women$child)))[4],
+prop.table(table(na.omit(men$child)))[4]
+	)
+
+# Proportion with four.
+
+prop.four <- cbind(prop.table(table(na.omit(all$child)))[5],
+prop.table(table(na.omit(dems$child)))[5],
+prop.table(table(na.omit(reps$child)))[5],
+prop.table(table(na.omit(women$child)))[5],
+prop.table(table(na.omit(men$child)))[5]
+	)
+
+# Proportion with five.
+
+prop.five <- cbind(prop.table(table(na.omit(all$child)))[6],
+prop.table(table(na.omit(dems$child)))[6],
+prop.table(table(na.omit(reps$child)))[6],
+prop.table(table(na.omit(women$child)))[6],
+prop.table(table(na.omit(men$child)))[6]
+	)
+	
+# Since they're looking at 6 children or more, they use aa-ee to
+# create each cell of the table. For simplicity, we name them aa2
+# and so on.
+
+aa2 <- table(na.omit(all$child))
+	plus6.all <- sum(aa2[7:length(aa2)])/sum(aa2)
+	
+bb2 <- table(na.omit(dems$child))
+	plus6.dems <- sum(bb2[7:length(bb2)])/sum(bb2)
+
+cc2 <- table(na.omit(reps$child))
+	plus6.reps <- sum(cc2[7:length(cc2)])/sum(cc2)
+
+dd2 <- table(na.omit(women$child))
+	plus6.women <- sum(dd2[7:length(dd2)])/sum(dd2)
+
+ee2 <- table(na.omit(men$child))
+	plus6.men <- sum(ee2[7:length(ee2)])/sum(ee2)
+	
+# This makes the 6 children or more row.
+	
+prop.six.or.greater <- cbind(plus6.all, plus6.dems, plus6.reps, plus6.women, plus6.men)
+	
+# Now they look for the proportion of each gender.
+mean.female <- cbind(mean(na.omit(all$woman)), 
+		mean(na.omit(dems$woman)),
+		mean(na.omit(reps$woman)),
+		mean(na.omit(women$woman)),
+		mean(na.omit(men$woman))
+	)
+
+# And then proportion of Republicans.
+
+mean.rep <- cbind(mean(na.omit(all$republican)), 
+		mean(na.omit(dems$republican)),
+		mean(na.omit(reps$republican)),
+		mean(na.omit(women$republican)),
+		mean(na.omit(men$republican))
+)
+
+# Proportion of white people.
+
+mean.white <- cbind(mean(na.omit(all$race == 1)), 
+		mean(na.omit(dems$race == 1)),
+		mean(na.omit(reps$race == 1)),
+		mean(na.omit(women$race == 1)),
+		mean(na.omit(men$race == 1))
+	)
+
+# Then they calculate the average age by looking at the mean year
+# of birth of each judge in each subset.
+mean.yearb <- cbind(mean(na.omit(all$yearb)), 
+		mean(na.omit(dems$yearb)),
+		mean(na.omit(reps$yearb)),
+		mean(na.omit(women$yearb)),
+		mean(na.omit(men$yearb))
+	)
+
+# They assign their NA to N in the table. This binding makes it so.
+
+no_judges <- cbind(nrow(all), nrow(dems), nrow(reps), nrow(women), nrow(men))
+
+# This code should make the table.
+
+demographic_table <- rbind(mean.kids, mean.girls, prop.zero, prop.one,
+	prop.two, prop.three, prop.four, prop.five, prop.six.or.greater, mean.female, mean.rep, mean.white, mean.yearb, no_judges)
+
+colnames(demographic_table) <- c("All", "Democrats", "Republicans","Women", "Men")
+rownames(demographic_table) <- c("Mean No. Children", "Mean No. Girls",
+	"Proportion who have 0 children","1 children",
+	"2 children", "3 children",
+	"4 children", "5 Children", "6 Children or More", "Proportion Female", "Proportion Republican",
+	"Proportion White", "Mean Year Born", "N")
+xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
+
+# This part of the data makes weights based on the number of cases
+# heard by each judge. They don't use this for a table but it's
+# needed for other things in the data. They make a new subset and
+# function looking at the number of cases.
+
+no_cases <- matrix(data = NA, nrow = nrow(judge.means), ncol = 1)
+for(i in 1:length(no_cases)){
+	no_cases[i] <- nrow(women.cases[which(women.cases$name == judge.means$name[i]),])
+	}
+
+# They bring together the judge means and the number of cases.
+
+judge.means <- cbind(judge.means, no_cases)
+
+# They want this sum function to equal 2,674. It does.
+
+sum(judge.means$no_cases)
+```
+
