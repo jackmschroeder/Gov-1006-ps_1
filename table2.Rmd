@@ -14,6 +14,10 @@ header-includes:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Loading in the necessary libraries. Had to install Zelig,
+# ZeligChoice, reshape, apsrtable, and rms.
+
 library(Zelig)
 library("ZeligChoice")
 library(xtable)		
