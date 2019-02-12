@@ -1,0 +1,73 @@
+---
+title: 'Replication #2'
+author: "Jack Schroeder and Annika Engstrom"
+date: "2/11/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# We load in the necessary libraries.
+
+library(Zelig)
+library("ZeligChoice")
+library(xtable)		
+library(reshape)
+library(apsrtable)
+library(stargazer)
+library(rms)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(tidyverse)
+```
+
+```{r}
+# There were a few chunks of the replication code that we don't actually
+# need to complete our analysis. That code is not included here.
+
+# Since this is the second week of the replication, we will attempt to
+# recreate Table 7 (with an additional model)
+
+
+```
+
+```{r t9, echo=FALSE}
+judge.means <- read.csv("glynn_sen_daughters_by_judge.csv", stringsAsFactors = FALSE)
+
+
+
+## just republicans:
+rep.means <- subset(judge.means, republican == 1)
+
+## just democrats
+dem.means <- subset(judge.means, republican == 0)
+
+aa <- table(dem.means$child, dem.means$girl)
+bb <- table(rep.means$child, rep.means$girl)
+cc <- table(judge.means$child, judge.means$girl)
+
+aa.1 <- prop.table(table(dem.means$child, dem.means$girl),1)
+bb.1 <- prop.table(table(rep.means$child, rep.means$girl),1)
+cc.1 <- prop.table(table(judge.means$child, judge.means$girl),1)
+
+
+cc.1 <- cc.1[-c(9,11,15),]
+cc.1 <- cc.1[-(nrow(cc.1)),]
+newtable <- cbind(aa.1, bb.1, cc.1)
+newtable <- newtable [-c(1, nrow(newtable)),]
+
+row.names(newtable) <- c("1 Child", "2 Children", "3 Children", "4 Children", "5 Children", "7 Children", "9 Children")
+
+colnames(newtable) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls*", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
+kable(newtable, digits = 2, caption = "Table 9: Proportion of Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
+  kable_styling("striped") %>% 
+  add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5, "Total" = 6)) %>% 
+  footnote(general = "When reading the table, logically impossible results (the probability of having 5 of your 3 children be girls) should be discarded. There was no way in the replication code to replace such results with dashes (like in the paper).")
+
+
+```
+
