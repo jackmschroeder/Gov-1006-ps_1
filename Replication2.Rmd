@@ -1,5 +1,5 @@
 ---
-title: 'Replication #2'
+title: 'Replication #1 (continued)'
 author: "Jack Schroeder and Annika Engstrom"
 date: "2/11/2019"
 output:
@@ -26,107 +26,121 @@ library(tidyverse)
 ```
 
 ```{r means and cases, echo=FALSE}
- women.cases <- read.csv("glynn_sen_daughters_by_case_1.csv", stringsAsFactors = FALSE) 
 
-# ## Removing male plaintiffs:
- women.cases <- subset(women.cases, femplaintiff == 1)
+# We create the means for each judge (then by gender and party) and get case data.
 
- women.cases <- subset(women.cases, area == "employment" | area == "Title IX" | area == "pregnancy" | area == "abortion" | area == "reproductive rights")
+# Women cases is also a necessary subset.
 
- women.cases$area <- factor(women.cases$area, levels = c("abortion","employment","pregnancy","reproductive rights","Title IX"))
+women.cases <- read.csv("glynn_sen_daughters_by_case_1.csv", stringsAsFactors = FALSE) 
+women.cases <- subset(women.cases, femplaintiff == 1)
+women.cases <- subset(women.cases, area == "employment" | area == "Title IX" | area == "pregnancy" | area == "abortion" | area == "reproductive rights")
+women.cases$area <- factor(women.cases$area, levels = c("abortion","employment","pregnancy","reproductive rights","Title IX"))
 
-# ## All cases, including non-gender cases (from Ashlyn Kuersten/Susan Haire's coding)
-# cases <- read.csv("cases.for.analysis.csv")	
+# Here we look for all cases to get accurate judge means.
 
 judge.means <- read.csv("glynn_sen_daughters_by_judge.csv", stringsAsFactors = FALSE)
 
-all <- subset(judge.means, girls != "NaN") # subsets judge
-								  # data to those for 
-								  # whom we have fertility data
-########################################################
-## Calculating the Weights (Number of Cases)
-########################################################
+# We need to weigh each judge by the number of cases heard. This is from the replication
+# code.
 
 no_cases <- matrix(data = NA, nrow = nrow(judge.means), ncol = 1)
 for(i in 1:length(no_cases)){
 	no_cases[i] <- nrow(women.cases[which(women.cases$name == judge.means$name[i]),])
 	}
 
+# We merge the output into judge.means.
+
 judge.means <- cbind(judge.means, no_cases)
-########################################################
-## Calculating the Outcome Var
-########################################################
+
+# The outcome variable is liberal vote share. We need the number of liberal votes
+# first, which we then divide by the number of cases heard by each judge.
 
 no_liberalvote <- matrix(data = NA, nrow = nrow(judge.means), ncol = 1)
 for(i in 1:length(no_liberalvote)){
 	stuff <- women.cases[which(women.cases$name == judge.means$name[i]),]
 	no_liberalvote[i] <- nrow(subset(stuff, vote == 2 | vote == 3))
 	}
-
 lib_vote_share <- no_liberalvote/no_cases
+
+# Both of these are added back to judge.means. We don't need judges who don't have
+# data on daughters.
 
 judge.means <- cbind(judge.means, no_liberalvote, lib_vote_share)
 judge.means <- subset(judge.means, girls != "NaN")
-########################################################
-## Subsetting Data to Various Populations (for use later)
-########################################################
 
-## just women:
+# We subset the populations to find means by party and gender.
+
 women.means <- subset(judge.means, woman == 1)
-
-## just men:
 men.means <- subset(judge.means, woman == 0)
-
-## just republicans:
 rep.means <- subset(judge.means, republican == 1)
-
-## just democrats
 dem.means <- subset(judge.means, republican == 0)
 ```
 
 
-```{r, echo=FALSE}
+```{r table 7 creation, echo=FALSE}
 
-# filtering out judges with number of children outside the range of 1-4 in the means dataset
+# This code filters out judges who have 0 or more than 4 children (which are apparently
+# considered outliers) from the means dataset.
 
 rep.means <- filter(rep.means, child <= 4 & child >= 1)
 dem.means <- filter(dem.means, child <= 4 & child >= 1)
 men.means <- filter(men.means, child <= 4 & child >= 1)
 women.means <- filter(women.means, child <= 4 & child >= 1)
 
-# filtering out judges with number of children outside the range of 1-4 in the cases dataset
+# This code filters out judges who have 0 or more than 4 children (which are apparently
+# considered outliers) from the cases dataset.
 
 rep.cases <- filter(women.cases, child <= 4 & child >= 1 & republican == 1)
 dem.cases <- filter(women.cases, child <= 4 & child >= 1 & republican == 0)
 men.cases <- filter(women.cases, woman == 0)
 women.cases <- filter(women.cases, woman == 1)
 
+# This model looks at party as a whole but is not included in the table.
+
 my.outPARTY <- lm(lib_vote_share ~ I(girls > 0) * republican + as.factor(child),
                   data = judge.means, weights = judge.means$no_cases)
+
+# The first model of the table looks at the impact of Republican judges.
 
 my.outREP <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
                 data = rep.means, weights = rep.means$no_cases)
 
+# The second model looks at Democratic judges.
+
 my.outDEM <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
                 data = dem.means, weights = dem.means$no_cases)
+
+# This model looks at gender as a whole but is not included in the table.
 
 my.outGENDER <- lm(lib_vote_share ~ I(girls > 0) * woman + as.factor(child),
                    data = judge.means, weights = judge.means$no_cases)
 
+# The third model looks at male judges.
+
 my.outMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
                 data = men.means, weights = men.means$no_cases)
+
+# The fourth model looks at female judges.
 
 my.outWOMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
                   data = women.means, weights = women.means$no_cases)
 
+# The fifth model looks at the impact of male Republican judges with daughters.
+
 my.outREPMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
                    data = subset(men.means, republican == 1), weights = men.means$no_cases[which(men.means$republican == 1)])
+
+# The sixth model is one we created ourselves. We were curious as to what the impact
+# of daughters had on female Republican judges.
 
 my.outREPWOMEN <- lm(lib_vote_share ~ I(girls >0) + as.factor(child), data = subset(women.means, republican == 1), weights = women.means$no_cases[which(women.means$republican == 1)])
 
 ```
 
-```{r table 7, results='asis', echo = FALSE, warning = FALSE}
+```{r table 7 output, results='asis', echo = FALSE, warning = FALSE}
+
+# We use Stargazer to create a table with the original five models (and our new one).
+# We add the necessary labels and a note about what the table describes.
 
 stargazer(my.outREP, my.outDEM, my.outMEN, my.outWOMEN, my.outREPMEN, my.outREPWOMEN,
           header = FALSE,
@@ -140,52 +154,53 @@ stargazer(my.outREP, my.outDEM, my.outMEN, my.outWOMEN, my.outREPMEN, my.outREPW
                                            "3 Children", 
                                            "4 Children",
                                            "Constant"), 
-          notes = "Our outcome is the proportion of the judges' feminist votes on gender-related cases. We haven't read this in Gelman and Hill yet, but the models include fixed effects for total # of children and use weights based on the number of cases heard by each judge.", 
+          notes = "Our outcome is the proportion of the judges' feminist votes on gender-related cases. We haven't read this in Gelman and Hill yet, but the models include fixed effects for total # of children and use weights based on the number of cases heard by each judge. Model 6 is new and focuses on Republican women.", 
           label = "t:results_party")
 
 ```
-
-
-
-```{r, echo=FALSE}
-# There were a few chunks of the replication code that we don't actually
-# need to complete our analysis. That code is not included here.
-
-# Since this is the second week of the replication, we will attempt to
-# recreate Table 7 (with an additional model)
-
-
-```
 \newpage
-```{r table 9, echo=FALSE}
+```{r table 9 creation and output, echo=FALSE}
 
-## just republicans:
+# We find rep and dem means again since they were changed for table 7.
+
 rep.means <- subset(judge.means, republican == 1)
-
-## just democrats
 dem.means <- subset(judge.means, republican == 0)
+
+# We then create tables measuring children and daughters for each judge.
+# Our expansion to the work is also looking at this metric in its totality.
 
 aa <- table(dem.means$child, dem.means$girl)
 bb <- table(rep.means$child, rep.means$girl)
 cc <- table(judge.means$child, judge.means$girl)
 
+# We then make prop.tables for each subset (along with the totals).
+
 aa.1 <- prop.table(table(dem.means$child, dem.means$girl),1)
 bb.1 <- prop.table(table(rep.means$child, rep.means$girl),1)
 cc.1 <- prop.table(table(judge.means$child, judge.means$girl),1)
 
+# The totals need to be reformatted before using cbind.
+
 cc.1 <- cc.1[-c(9,11,15),]
 cc.1 <- cc.1[-(nrow(cc.1)),]
 
-newtable <- cbind(aa.1, bb.1, cc.1)
-newtable <- newtable [-1,]
+# The combined table is created and named table9. We do not need the first row (which
+# looks at judges with no children) since it was already accounted for earlier.
 
-row.names(newtable) <- c("1 Child", "2 Children", "3 Children", "4 Children", "5 Children", "7 Children", "9 Children")
-colnames(newtable) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls*", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
+table9 <- cbind(aa.1, bb.1, cc.1)
+table9 <- table9 [-1,]
 
-kable(newtable, digits = 2, caption = "Table 9: Proportion of Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
+# We assign row and column names to the table.
+
+row.names(table9) <- c("1 Child", "2 Children", "3 Children", "4 Children", "5 Children", "7 Children", "9 Children")
+colnames(table9) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls*", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
+
+# And then we use kableExtra to make a nice-looking table with the results.
+
+kable(table9, digits = 2, caption = "Table 9: Proportion of Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
   kable_styling("striped") %>% 
   add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5, "Total" = 6)) %>% 
-  footnote(general = "When reading the table, logically impossible results (the probability of having 5 of your 3 children be girls) should be discarded. There was no way in the replication code to replace such results with dashes (like in the paper).")
+  footnote(general = "When reading the table, logically impossible results (the probability of having 5 of your 3 children be girls) should be discarded. There was no way in the replication code to replace such results with dashes (like in the paper).",
+           symbol = "There was a column in the original table looking at Republican judges with 5 children, but it did not contain any non-zero values, so we did not include it (it was also not in the replication code.")
 
 ```
-
