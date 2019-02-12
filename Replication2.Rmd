@@ -25,7 +25,7 @@ library(gridExtra)
 library(tidyverse)
 ```
 
-```{r means and cases}
+```{r means and cases, echo=FALSE}
  women.cases <- read.csv("glynn_sen_daughters_by_case_1.csv", stringsAsFactors = FALSE) 
 
 # ## Removing male plaintiffs:
@@ -85,7 +85,7 @@ dem.means <- subset(judge.means, republican == 0)
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 
 # filtering out judges with number of children outside the range of 1-4 in the means dataset
 
@@ -147,7 +147,7 @@ stargazer(my.outREP, my.outDEM, my.outMEN, my.outWOMEN, my.outREPMEN, my.outREPW
 
 
 
-```{r}
+```{r, echo=FALSE}
 # There were a few chunks of the replication code that we don't actually
 # need to complete our analysis. That code is not included here.
 
@@ -156,9 +156,14 @@ stargazer(my.outREP, my.outDEM, my.outMEN, my.outWOMEN, my.outREPMEN, my.outREPW
 
 
 ```
+\newpage
+```{r table 9, echo=FALSE}
 
-```{r t9, echo=FALSE}
+## just republicans:
+rep.means <- subset(judge.means, republican == 1)
 
+## just democrats
+dem.means <- subset(judge.means, republican == 0)
 
 aa <- table(dem.means$child, dem.means$girl)
 bb <- table(rep.means$child, rep.means$girl)
@@ -168,20 +173,19 @@ aa.1 <- prop.table(table(dem.means$child, dem.means$girl),1)
 bb.1 <- prop.table(table(rep.means$child, rep.means$girl),1)
 cc.1 <- prop.table(table(judge.means$child, judge.means$girl),1)
 
-
 cc.1 <- cc.1[-c(9,11,15),]
 cc.1 <- cc.1[-(nrow(cc.1)),]
-#newtable <- cbind(aa.1, bb.1, cc.1)
-#newtable <- newtable [-c(1, nrow(newtable)),]
 
-#row.names(newtable) <- c("1 Child", "2 Children", "3 Children", "4 Children", "5 Children", "7 Children", "9 Children")
+newtable <- cbind(aa.1, bb.1, cc.1)
+newtable <- newtable [-1,]
 
-#colnames(newtable) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls*", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
-#kable(newtable, digits = 2, caption = "Table 9: Proportion of Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
-#  kable_styling("striped") %>% 
-#  add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5, "Total" = 6)) %>% 
-#  footnote(general = "When reading the table, logically impossible results (the probability of having 5 of your 3 children be girls) should be discarded. There was no way in the replication code to replace such results with dashes (like in the paper).")
+row.names(newtable) <- c("1 Child", "2 Children", "3 Children", "4 Children", "5 Children", "7 Children", "9 Children")
+colnames(newtable) <- c("0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls*", "0 Girls", "1 Girl", "2 Girls", "3 Girls", "4 Girls", "5 Girls")
 
+kable(newtable, digits = 2, caption = "Table 9: Proportion of Girls for U.S. Courts of Appeals Judges Participating in Gender-Related Cases, 1996-2002") %>% 
+  kable_styling("striped") %>% 
+  add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5, "Total" = 6)) %>% 
+  footnote(general = "When reading the table, logically impossible results (the probability of having 5 of your 3 children be girls) should be discarded. There was no way in the replication code to replace such results with dashes (like in the paper).")
 
 ```
 
