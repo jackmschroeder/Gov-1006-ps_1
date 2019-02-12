@@ -1,0 +1,83 @@
+---
+title: "Table 7"
+author: "Annika Engstrom"
+date: "2/11/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(Zelig)
+library("ZeligChoice")
+library(xtable)		
+library(reshape)
+library(apsrtable)
+library(stargazer)
+library(rms)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(tidyverse)
+```
+
+```{r}
+
+# filtering out judges with number of children outside the range of 1-4 in the means dataset
+
+rep.means <- filter(rep.means, child <= 4 & child >= 1)
+dem.means <- filter(dem.means, child <= 4 & child >= 1)
+men.means <- filter(men.means, child <= 4 & child >= 1)
+women.means <- filter(women.means, child <= 4 & child >= 1)
+
+# filtering out judges with number of children outside the range of 1-4 in the cases dataset
+
+rep.cases <- filter(women.cases, child <= 4 & child >= 1 & republican == 1)
+dem.cases <- filter(women.cases, child <= 4 & child >= 1 & republican == 0)
+men.cases <- filter(women.cases, woman == 0)
+women.cases <- filter(women.cases, woman == 1)
+
+my.outPARTY <- lm(lib_vote_share ~ I(girls > 0) * republican + as.factor(child),
+                  data = judge.means, weights = judge.means$no_cases)
+
+my.outREP <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
+                data = rep.means, weights = rep.means$no_cases)
+
+my.outDEM <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
+                data = dem.means, weights = dem.means$no_cases)
+
+my.outGENDER <- lm(lib_vote_share ~ I(girls > 0) * woman + as.factor(child),
+                   data = judge.means, weights = judge.means$no_cases)
+
+my.outMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
+                data = men.means, weights = men.means$no_cases)
+
+my.outWOMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
+                  data = women.means, weights = women.means$no_cases)
+
+my.outREPMEN <- lm(lib_vote_share ~ I(girls > 0) + as.factor(child),
+                   data = subset(men.means, republican == 1), weights = men.means$no_cases[which(men.means$republican == 1)])
+
+```
+
+```{r t7, results='asis', echo = FALSE, warning = FALSE}
+
+stargazer(my.outREP, my.outDEM, my.outMEN, my.outWOMEN, my.outREPMEN,
+          header = FALSE,
+          type = "html",
+          style = "ajps", 
+          omit.stat = c("f","ser"), 
+          dep.var.labels = "Table 7: Weighted Least Squares Results", 
+          digits = 2, 
+          covariate.labels = c("At Least 1 Girl", 
+                                           "2 Children", 
+                                           "3 Children", 
+                                           "4 Children",
+                                           "Constant"), 
+          notes = "Outcome is judges' proportion of feminist votes on gender-related cases. All models include fixed effects for total number of children and use weights based on the number of cases heard by each judge.", 
+          label = "t:results_party")
+
+```
+
