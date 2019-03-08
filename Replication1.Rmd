@@ -31,6 +31,8 @@ library(gridExtra)
 library(tidyverse)
 ```
 
+A brief abstarct is always a good thing to include
+
 ```{r, echo=FALSE}
 # From the replication code, we think this makes sure calling for 
 # sim still works.
@@ -82,6 +84,7 @@ all <- subset(judge.means, girls != "NaN")
 aa1 <- table(all$republican, all$child)
 bb1 <- table(all$republican, all$girls)
 
+# good replication of Table 1, definitely want some captions/titles so we know what the numbers mean
 
 # Calling kable replicates the table as best we can.
 
@@ -255,6 +258,8 @@ rownames(demographic_table) <- c("Mean No. Children", "Mean No. Girls",
 #xtable(demographic_table, digits = 2, caption = "Demographics of U.S. Court of Appeal Judges who voted on gender-related cases (1996-2002)", label = "t:statsgender", align = "l|ccccc")
 kable(demographic_table, digits = 2, caption = "Table 2: Demographics of U.S. Courts of Appeals Judges Who Voted on Gender-Related Cases, 1996-2002")
 
+# good looking Table 2
+
 # This part of the data makes weights based on the number of cases
 # heard by each judge. They don't use this for a table but it's
 # needed for other things in the data. They make a new subset and
@@ -319,6 +324,8 @@ dem.means <- subset(judge.means, republican == 0)
 
 ggplot(judge.means, aes(lib_vote_share)) + geom_density() + xlim(-0.5,1.5) + xlab("Proportion of Cases Decided in a Feminist Direction") + ylab("") + scale_color_manual(values = c(`0`="blue", `1` = "red")) + theme(legend.position="none", axis.text.y = element_blank(), axis.ticks.y = element_blank()) + geom_density(aes(lib_vote_share, color=factor(republican), linetype = factor(republican))) + ggtitle("Figure 1: Distribution of the Proportion of Cases Decided in a Feminist Direction out of All Gender-Related Cases Decided, 1996-2002")
 
+# great plot
+
 # Then we make table 3, which looks at case distribution.
 
 gg <- rbind (summary(judge.means$no_cases), summary(dem.means$no_cases), summary(rep.means$no_cases))
@@ -326,6 +333,8 @@ rownames(gg) <- c("All Judges", "Democrats", "Republicans")
 
 kable(gg, caption = "Table 3: Distribution of the number of gender-related cases heard per judge, 1996-2002")
 ```
+
+Good table again
 
 
 ```{r, echo=FALSE}
@@ -367,3 +376,7 @@ kable(cbind(aa.9, bb.9), digits = 2, caption = "Table 9: Proportion of Girls (Co
   kable_styling("striped") %>% 
   add_header_above(c(" " = 1, "Democrats" = 6, "Republicans" = 5))
 ```
+
+Include bibliography moving forward.
+
+I really appreciate the detailed comments. This lets me know that you know what is going on and are following what the authors are doing, plus this is useful when you need to make an extension. I know this is the first replication, but in the future if something isn't working, take a bit of time to figure out why. If you don't know what something is doing or can't figure out how to make it work, you should ask in Slack or during office hours. Omitting large parts of the replication doesn't help you learn and also makes it hard to grade.
